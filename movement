@@ -1,85 +1,94 @@
+# Part of godot engine
 extends KinematicBody2D
 
-var Pi= 3.14159
-# Player movement speed
-export var velocity = 1
+# Variable that can be changed
+var accel = 6 				# How fast the player accelerates
+var decel = 7				# How fast the player decelerates
+var max_speed = 365			# Max speed the player can move
+var min_speed = 0			# Minimum speed the player can move
+var latency = 11			# How many frames of input latency. (effects movenemt and turning)
 
-# VARIBLES THAT WORK AND CAN BE CHANGED vvvvvvvvvv
-var accel = 10
-var max_speed = 401
-var min_speed = 0
-var decel = 10
-var latency = 10 # How many frames of input latency. (effects movenemt and turning)
-# VARIBLES THAT WORK AND CAN BE CHANGED ^^^^^^^^^^
 
-var min_turn_radius = Pi/6
-var l: Vector2
-var latencyList = [l,l,l,l,l,l,l,l,l,l]
-
+# Misalanous variables
+var velocity = 1
+var latency_list = []
+var movement: Vector2
 var time_till_max_speed = (accel * 60.0) / max_speed
-
-var momentum = 0
-var theta = 0
-var theta2 = 0
-# Player dragging flag
+var setup_needed = true
+var none_dir: Vector2
 var drag_enabled = false
 
+
+# This function runs every frame
 func _physics_process(delta):
+	# runs once at the start of the program
+	if setup_needed:
+		setup()
+		setup_needed = false
 	
-	
-		
-	#print("time till max speed ", time_till_max_speed, " seconds")
-	var direction: Vector2
-	var none_dir: Vector2
-	
-	# Calculate movement
-	var movement = velocity * direction
-	
+	# gets the mouse position, and bases movement off of it
 	var new_position = get_global_mouse_position()
-	#theta = tan(pow(new_position[0]/new_position[1], -1))
-	
 	movement = new_position - position;
-	var distance_to_pointer = (new_position[0] - position[0]) / (new_position[1] - position[1])
 	
+	# Checks if the player is clicking. If so, accelerate, if not decelerate.
+	# If the player is clicking, but the object is not moveing, also decelerate
+	if drag_enabled:
+		if movement != none_dir:
+			accelerate()
+		else:
+			decelerate()
+	else:
+		decelerate()
+	
+	# normalizes (sets length to 1) the movement vector and applys the velocity to it
 	if movement.length() > (velocity * delta):
 		movement = velocity * delta * movement.normalized()
 	
-	latencyList.append(movement)
-	if len(latencyList) > latency:
-		latencyList.remove(0)
-	
-	#theta = tan(pow(latencyList[0][0]/latencyList[0][1], -1))
-	#theta2 = tan(pow(latencyList[9][0]/latencyList[9][1], -1))
-	#var index_of_good = 9
-	#while theta2+min_turn_radius > theta:
-	#	index_of_good -= 1
-	#	theta2 = tan(pow(latencyList[index_of_good][0]/latencyList[index_of_good][1], -1))
-	#movement = latencyList[index_of_good]
-	#momentum = (movement[0]/movement[1])
-	movement = latencyList[0]
-	
-	#print(theta)
-	print(movement)
-	# If dragging is enabled, use mouse position to calculate movement
-	if drag_enabled:
-		if movement != none_dir:
-			if velocity + accel <= max_speed:
-				velocity += accel
-		else:
-			if distance_to_pointer <= 100 and velocity - decel*8 >= min_speed:
-				velocity -= decel*8
-		
-	else:
-		if velocity - decel >= min_speed:
-			velocity -= decel
+	# applys the frame latency variable
+	movement = apply_latency(movement)
 	
 	# Apply movement
 	move_and_collide(movement)
 	
-func calc_theta(player_point, point):
-	pass
+	
+# accelerates the player (not past max_speed)
+func accelerate():
+	if velocity + accel <= max_speed:
+		velocity += accel
 
 
+# decelerates the player (not past min_speed)
+func decelerate():
+	if velocity - decel >= min_speed:
+			velocity -= decel
+
+
+# applies the frame latency variable to have the player move to where the mouse was so many frames ago.
+func apply_latency(movement):
+	latency_list.append(movement)
+	if len(latency_list) > latency:
+		latency_list.remove(0)
+	return latency_list[0]
+
+
+
+# One time startup function to initialize the latency_list variable that 
+# tracks the movement of the player over the last so many frames.
+func setup_latency_list():
+	var empty_vector: Vector2
+	for i in range(latency):
+		latency_list.append(empty_vector)
+
+
+
+# One time startup function. Prints time_till_max_speed in seconds, and runs setup_latency_list() function
+func setup():
+	setup_latency_list()
+	print("time till max speed ", time_till_max_speed, " seconds")
+
+
+# Gets click input of the mouse and changes the drag_enabled to true or false
+# depending on whether the mouse is clicked or not.
 func _input(event):
 	if event is InputEventMouseButton:
 		if drag_enabled:
