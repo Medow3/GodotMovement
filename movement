@@ -4,11 +4,13 @@ var Pi= 3.14159
 # Player movement speed
 export var velocity = 1
 
+# VARIBLES THAT WORK AND CAN BE CHANGED vvvvvvvvvv
 var accel = 10
 var max_speed = 401
 var min_speed = 0
 var decel = 10
 var latency = 10 # How many frames of input latency. (effects movenemt and turning)
+# VARIBLES THAT WORK AND CAN BE CHANGED ^^^^^^^^^^
 
 var min_turn_radius = Pi/6
 var l: Vector2
