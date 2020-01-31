@@ -1,39 +1,71 @@
 extends KinematicBody2D
 
+var Pi= 3.14159
 # Player movement speed
 export var velocity = 1
 
 var accel = 10
-var max_speed = 701
+var max_speed = 401
 var min_speed = 0
 var decel = 10
+var latency = 10 # How many frames of input latency. (effects movenemt and turning)
+
+var min_turn_radius = Pi/6
+var l: Vector2
+var latencyList = [l,l,l,l,l,l,l,l,l,l]
 
 var time_till_max_speed = (accel * 60.0) / max_speed
 
+var momentum = 0
+var theta = 0
+var theta2 = 0
 # Player dragging flag
 var drag_enabled = false
 
 func _physics_process(delta):
 	
-	print("time till max speed ", time_till_max_speed, " seconds")
-	# Get player input
+	
+		
+	#print("time till max speed ", time_till_max_speed, " seconds")
 	var direction: Vector2
 	var none_dir: Vector2
+	
 	# Calculate movement
 	var movement = velocity * direction
 	
 	var new_position = get_global_mouse_position()
+	#theta = tan(pow(new_position[0]/new_position[1], -1))
+	
 	movement = new_position - position;
+	var distance_to_pointer = (new_position[0] - position[0]) / (new_position[1] - position[1])
+	
 	if movement.length() > (velocity * delta):
 		movement = velocity * delta * movement.normalized()
+	
+	latencyList.append(movement)
+	if len(latencyList) > latency:
+		latencyList.remove(0)
+	
+	#theta = tan(pow(latencyList[0][0]/latencyList[0][1], -1))
+	#theta2 = tan(pow(latencyList[9][0]/latencyList[9][1], -1))
+	#var index_of_good = 9
+	#while theta2+min_turn_radius > theta:
+	#	index_of_good -= 1
+	#	theta2 = tan(pow(latencyList[index_of_good][0]/latencyList[index_of_good][1], -1))
+	#movement = latencyList[index_of_good]
+	#momentum = (movement[0]/movement[1])
+	movement = latencyList[0]
+	
+	#print(theta)
+	print(movement)
 	# If dragging is enabled, use mouse position to calculate movement
 	if drag_enabled:
 		if movement != none_dir:
 			if velocity + accel <= max_speed:
 				velocity += accel
 		else:
-			if velocity - decel >= min_speed:
-				velocity -= decel
+			if distance_to_pointer <= 100 and velocity - decel*8 >= min_speed:
+				velocity -= decel*8
 		
 	else:
 		if velocity - decel >= min_speed:
@@ -42,6 +74,9 @@ func _physics_process(delta):
 	# Apply movement
 	move_and_collide(movement)
 	
+func calc_theta(player_point, point):
+	pass
+
 
 func _input(event):
 	if event is InputEventMouseButton:
