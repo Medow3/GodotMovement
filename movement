@@ -7,10 +7,11 @@ var decel = 7				# How fast the player decelerates
 var max_speed = 365			# Max speed the player can move
 var min_speed = 0			# Minimum speed the player can move
 var latency = 11			# How many frames of input latency. (effects movenemt and turning)
+var min_turn_radius = 0.4	# The minimum turning radius (0 - 0.9. 0 = 180 degrees, 0.9 = crazy small angle)
 
 
 # Misalanous variables
-var velocity = 1
+var velocity = 0
 var latency_list = []
 var movement: Vector2
 var time_till_max_speed = (accel * 60.0) / max_speed
@@ -40,6 +41,9 @@ func _physics_process(delta):
 	else:
 		decelerate()
 	
+	# avoids the player moveing around slowly when not clicking
+	normalize_low_vel()
+	
 	# normalizes (sets length to 1) the movement vector and applys the velocity to it
 	if movement.length() > (velocity * delta):
 		movement = velocity * delta * movement.normalized()
@@ -49,7 +53,8 @@ func _physics_process(delta):
 	
 	# Apply movement
 	move_and_collide(movement)
-	
+
+
 	
 # accelerates the player (not past max_speed)
 func accelerate():
@@ -63,13 +68,28 @@ func decelerate():
 			velocity -= decel
 
 
+# returns a boolean of wether the player is turning faster than the min_turning_radius
+func min_turning_radius_check():
+	var mouse_position = get_global_mouse_position()
+	var line_player_mouse = (mouse_position - position).normalized()
+	if line_player_mouse.dot(movement) > min_turn_radius:
+    	return false
+	else:
+		return true
+
+
+# avoids the player moveing around slowly when not clicking
+func normalize_low_vel():
+	if velocity < accel:
+		velocity = 0
+
+
 # applies the frame latency variable to have the player move to where the mouse was so many frames ago.
 func apply_latency(movement):
 	latency_list.append(movement)
 	if len(latency_list) > latency:
 		latency_list.remove(0)
 	return latency_list[0]
-
 
 
 # One time startup function to initialize the latency_list variable that 
@@ -95,5 +115,3 @@ func _input(event):
 			drag_enabled = false
 		else:
 			drag_enabled = true
-			if velocity == 0:
-				velocity = 1
