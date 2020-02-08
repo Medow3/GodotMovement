@@ -7,7 +7,7 @@ var decel = 7				# How fast the player decelerates
 var max_speed = 365			# Max speed the player can move
 var min_speed = 0			# Minimum speed the player can move
 var latency = 11			# How many frames of input latency. (effects movenemt and turning)
-var min_turn_radius = 0.4	# The minimum turning radius (0 - 0.9. 0 = 180 degrees, 0.9 = crazy small angle)
+var min_turn_radius = 0.4		# The minimum turning radius (0 - 0.9. 0 = 180 degrees, 0.9 = crazy small angle)
 
 
 # Misalanous variables
